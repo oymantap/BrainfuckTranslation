@@ -50,11 +50,21 @@
   button:hover {
     background-color: #357ab7;
   }
+  .btn-copy {
+    background-color: #50c878;
+  }
+  .btn-copy:hover {
+    background-color: #3da35a;
+  }
   pre {
     background-color: #f0f4f8;
     padding: 15px;
     border-radius: 8px;
     overflow-x: auto;
+    white-space: pre-wrap;
+  }
+  .buttons-group {
+    margin-bottom: 15px;
   }
 </style>
 </head>
@@ -62,9 +72,10 @@
 <div class="container">
 <h1>Brainfuck Translator</h1>
 <textarea id="inputText" rows="4" placeholder="Tulis teks atau Brainfuck di sini..."></textarea>
-<div style="margin-bottom:15px;">
+<div class="buttons-group">
   <button id="toBF">Terjemahkan ke Brainfuck</button>
   <button id="toText">Terjemahkan ke Teks</button>
+  <button id="copyOutput" class="btn-copy">Copy Output</button>
 </div>
 <pre id="outputArea"></pre>
 </div>
@@ -81,7 +92,7 @@
       prev = code;
       return bf;
     }).join('\n');
-  }function runBrainfuck(bf) { const cells = Array(30000).fill(0); let ptr = 0; let output = ''; const stack = []; const bfArr = bf.split('');
+  }function runBrainfuck(bf) { const cells = Array(30000).fill(0); let ptr = 0; let output = ''; const bfArr = bf.split('');
 
 // Build bracket map
 const map = {};
@@ -105,9 +116,13 @@ return output;
 
 }
 
-document.getElementById('toBF').addEventListener('click', () => { const input = document.getElementById('inputText').value; document.getElementById('outputArea').textContent = translateToBF(input); });
+const inputArea = document.getElementById('inputText'); const outputArea = document.getElementById('outputArea');
 
-document.getElementById('toText').addEventListener('click', () => { const input = document.getElementById('inputText').value; document.getElementById('outputArea').textContent = runBrainfuck(input); }); </script>
+document.getElementById('toBF').addEventListener('click', () => { outputArea.textContent = translateToBF(inputArea.value); });
+
+document.getElementById('toText').addEventListener('click', () => { outputArea.textContent = runBrainfuck(inputArea.value); });
+
+document.getElementById('copyOutput').addEventListener('click', () => { navigator.clipboard.writeText(outputArea.textContent).then(() => { alert('Output copied to clipboard!'); }).catch(() => { alert('Failed to copy output.'); }); }); </script>
 
 </body>
 </html>
