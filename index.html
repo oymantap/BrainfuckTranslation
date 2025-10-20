@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brainfuck Translator</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    function BrainfuckTranslator() {
+      const [text, setText] = React.useState("");
+      const [output, setOutput] = React.useState("");
+
+      const translateToBF = (str) => {
+        return Array.from(str)
+          .map(c => `+`.repeat(c.charCodeAt(0)) + ".")
+          .join("\n");
+      };
+
+      const handleTranslate = () => {
+        setOutput(translateToBF(text));
+      };
+
+      return (
+        <div style={{ fontFamily: "sans-serif", padding: 20 }}>
+          <h1>Brainfuck Translator</h1>
+          <textarea
+            rows="5"
+            cols="40"
+            placeholder="Tulis teks di sini..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <br />
+          <button onClick={handleTranslate}>Terjemahkan</button>
+          <pre>{output}</pre>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<BrainfuckTranslator />, document.getElementById("root"));
+  </script>
+</body>
+  </html>
