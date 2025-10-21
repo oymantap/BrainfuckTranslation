@@ -1,128 +1,252 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brainfuck Translator</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f6f8;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-  }
-  .container {
-    margin-top: 50px;
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    max-width: 700px;
-    width: 100%;
-  }
-  h1 {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 20px;
-  }
-  textarea {
-    width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 1rem;
-    margin-bottom: 15px;
-    resize: vertical;
-  }
-  button {
-    background-color: #4a90e2;
-    color: white;
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    margin-right: 8px;
-  }
-  button:hover {
-    background-color: #357ab7;
-  }
-  .btn-copy {
-    background-color: #50c878;
-  }
-  .btn-copy:hover {
-    background-color: #3da35a;
-  }
-  pre {
-    background-color: #f0f4f8;
-    padding: 15px;
-    border-radius: 8px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-  }
-  .buttons-group {
-    margin-bottom: 15px;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainfuck Translator (Modern)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Mengatur font default dan dark background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background color */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        /* Style untuk area output */
+        #outputArea {
+            min-height: 100px;
+            max-height: 400px;
+        }
+
+        /* Custom Modal Styles (Tailwind only) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: 300px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
-<body>
-<div class="container">
-<h1>Brainfuck Translator</h1>
-<textarea id="inputText" rows="4" placeholder="Tulis teks atau Brainfuck di sini..."></textarea>
-<div class="buttons-group">
-  <button id="toBF">Terjemahkan ke Brainfuck</button>
-  <button id="toText">Terjemahkan ke Teks</button>
-  <button id="copyOutput" class="btn-copy">Copy Output</button>
-</div>
-<pre id="outputArea"></pre>
-</div>
-<script>
-  function translateToBF(str) {
-    let prev = 0;
-    return Array.from(str).map(c => {
-      const code = c.charCodeAt(0);
-      const diff = code - prev;
-      let bf = '';
-      if(diff > 0) bf += '+'.repeat(diff);
-      else if(diff < 0) bf += '-'.repeat(-diff);
-      bf += '.';
-      prev = code;
-      return bf;
-    }).join('\n');
-  }function runBrainfuck(bf) { const cells = Array(30000).fill(0); let ptr = 0; let output = ''; const bfArr = bf.split('');
+<body class="p-4 md:p-8">
 
-// Build bracket map
-const map = {};
-const tempStack = [];
-bfArr.forEach((c,i)=>{
-  if(c==='[') tempStack.push(i);
-  else if(c===']'){ const start = tempStack.pop(); map[start]=i; map[i]=start; }
-});
+    <div class="w-full max-w-xl bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl mt-4 md:mt-10 border border-gray-700">
+        <h1 class="text-3xl font-bold text-teal-400 mb-6 text-center">
+            Brainfuck Translator
+        </h1>
 
-for(let i=0;i<bfArr.length;i++){
-  const c = bfArr[i];
-  if(c==='+') cells[ptr] = (cells[ptr]+1)%256;
-  else if(c==='-') cells[ptr] = (cells[ptr]-1+256)%256;
-  else if(c==='>') ptr++;
-  else if(c==='<') ptr--;
-  else if(c==='.'){ output+=String.fromCharCode(cells[ptr]); }
-  else if(c==='[' && cells[ptr]===0) i=map[i];
-  else if(c===']' && cells[ptr]!==0) i=map[i];
-}
-return output;
+        <!-- Input Area -->
+        <textarea id="inputText" rows="6"
+            class="w-full bg-gray-900 text-gray-200 border border-gray-700 p-4 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition duration-200 resize-y"
+            placeholder="Tulis teks atau Brainfuck di sini..."></textarea>
 
-}
+        <!-- Buttons Group -->
+        <div class="flex flex-col sm:flex-row gap-3 my-5">
+            <button id="toBF"
+                class="flex-1 bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Terjemahkan ke Brainfuck
+            </button>
+            <button id="toText"
+                class="flex-1 bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Terjemahkan ke Teks
+            </button>
+            <button id="copyOutput"
+                class="sm:w-auto bg-teal-500 text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-teal-600 transition duration-200 shadow-md transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500">
+                Copy Output
+            </button>
+        </div>
 
-const inputArea = document.getElementById('inputText'); const outputArea = document.getElementById('outputArea');
+        <!-- Output Area -->
+        <pre id="outputArea"
+            class="bg-gray-700 text-gray-100 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap text-sm border border-gray-600">Hasil Output Akan Muncul di Sini.</pre>
 
-document.getElementById('toBF').addEventListener('click', () => { outputArea.textContent = translateToBF(inputArea.value); });
+    </div>
 
-document.getElementById('toText').addEventListener('click', () => { outputArea.textContent = runBrainfuck(inputArea.value); });
+    <!-- Custom Pop-up / Modal -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalText" class="text-lg font-medium mb-1">Pesan</div>
+            <div id="modalIcon" class="text-3xl"></div>
+        </div>
+    </div>
 
-document.getElementById('copyOutput').addEventListener('click', () => { navigator.clipboard.writeText(outputArea.textContent).then(() => { alert('Output copied to clipboard!'); }).catch(() => { alert('Failed to copy output.'); }); }); </script>
+    <script>
+        // --- Core Translation Logic (No Change) ---
+        function translateToBF(str) {
+            let prev = 0;
+            return Array.from(str).map(c => {
+                const code = c.charCodeAt(0);
+                const diff = code - prev;
+                let bf = '';
+                if (diff > 0) bf += '+'.repeat(diff);
+                else if (diff < 0) bf += '-'.repeat(-diff);
+                bf += '.';
+                prev = code;
+                return bf;
+            }).join('\n');
+        }
+
+        function runBrainfuck(bf) {
+            const cells = Array(30000).fill(0);
+            let ptr = 0;
+            let output = '';
+            const bfArr = bf.split('');
+
+            // Build bracket map
+            const map = {};
+            const tempStack = [];
+            bfArr.forEach((c, i) => {
+                if (c === '[') tempStack.push(i);
+                else if (c === ']') {
+                    const start = tempStack.pop();
+                    map[start] = i;
+                    map[i] = start;
+                }
+            });
+
+            try {
+                for (let i = 0; i < bfArr.length; i++) {
+                    const c = bfArr[i];
+                    if (c === '+') cells[ptr] = (cells[ptr] + 1) % 256;
+                    else if (c === '-') cells[ptr] = (cells[ptr] - 1 + 256) % 256;
+                    else if (c === '>') ptr++;
+                    else if (c === '<') ptr--;
+                    else if (c === '.') { output += String.fromCharCode(cells[ptr]); }
+                    else if (c === '[' && cells[ptr] === 0) i = map[i];
+                    else if (c === ']' && cells[ptr] !== 0) i = map[i];
+
+                    // Simple loop limit to prevent freezing on invalid code (optional but good practice)
+                    if (i > 1000000) {
+                        throw new Error("Waktu eksekusi Brainfuck terlalu lama (kemungkinan loop tak terbatas/kode invalid).");
+                    }
+                }
+            } catch (error) {
+                return `[Error] ${error.message}`;
+            }
+
+            return output;
+        }
+        // --- End Core Logic ---
+
+        const inputArea = document.getElementById('inputText');
+        const outputArea = document.getElementById('outputArea');
+        const customModal = document.getElementById('customModal');
+        const modalText = document.getElementById('modalText');
+        const modalIcon = document.getElementById('modalIcon');
+        let dotInterval = null;
+
+        // --- Custom Pop-up Functions ---
+
+        /**
+         * Menampilkan pop-up dengan pesan dan ikon status.
+         * @param {string} message - Pesan yang ditampilkan.
+         * @param {string} icon - Ikon (e.g., '✅', '❌', '⏳').
+         */
+        function showModal(message, icon) {
+            modalText.textContent = message;
+            modalIcon.textContent = icon;
+            customModal.style.display = 'flex';
+        }
+
+        function hideModal() {
+            if (dotInterval) {
+                clearInterval(dotInterval);
+                dotInterval = null;
+            }
+            customModal.style.display = 'none';
+        }
+
+        /**
+         * Mengaktifkan animasi "Wait..." (titik-titik).
+         * @param {string} baseText - Teks dasar (e.g., "Menyalin").
+         */
+        function startWaitAnimation(baseText) {
+            let dots = 1;
+            modalIcon.textContent = '⏳';
+            modalText.textContent = baseText + '.'.repeat(dots);
+
+            dotInterval = setInterval(() => {
+                dots = (dots % 3) + 1;
+                modalText.textContent = baseText + '.'.repeat(dots);
+            }, 300);
+        }
+
+        // --- Event Listeners ---
+
+        document.getElementById('toBF').addEventListener('click', () => {
+            const result = translateToBF(inputArea.value);
+            outputArea.textContent = result || "Masukkan teks untuk diterjemahkan.";
+        });
+
+        document.getElementById('toText').addEventListener('click', () => {
+            const result = runBrainfuck(inputArea.value);
+            outputArea.textContent = result || "Masukkan kode Brainfuck untuk diterjemahkan.";
+        });
+
+        document.getElementById('copyOutput').addEventListener('click', async () => {
+            const textToCopy = outputArea.textContent;
+
+            if (textToCopy === 'Hasil Output Akan Muncul di Sini.' || textToCopy.trim() === '') {
+                showModal('Tidak ada output untuk disalin.', '⚠️');
+                setTimeout(hideModal, 1500);
+                return;
+            }
+
+            // 1. Start "Wait..." animation
+            startWaitAnimation('Menyalin');
+            showModal('Menyalin', '⏳');
+
+            try {
+                // 2. Perform copy operation
+                await navigator.clipboard.writeText(textToCopy);
+
+                // 3. Success: Stop animation, show success message
+                clearInterval(dotInterval);
+                dotInterval = null;
+                showModal('Berhasil Disalin!', '✅');
+
+            } catch (err) {
+                // 4. Error: Stop animation, show error message
+                clearInterval(dotInterval);
+                dotInterval = null;
+                console.error('Copy failed:', err);
+                showModal('Gagal Menyalin. Coba lagi.', '❌');
+            }
+
+            // 5. Hide modal after 1.5 seconds
+            setTimeout(hideModal, 1500);
+        });
+
+    </script>
 
 </body>
 </html>
+
+  
