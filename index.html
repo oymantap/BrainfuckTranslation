@@ -53,6 +53,21 @@
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
+        
+        /* Spinner CSS (Menggunakan Tailwind Classes untuk animasi) */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #34d399; /* teal-400 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -77,6 +92,12 @@
                 class="flex-1 bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500">
                 Terjemahkan ke Teks
             </button>
+            
+            <button id="clearAll"
+                class="sm:w-auto bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 shadow-md transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Bersihkan
+            </button>
+
             <button id="copyOutput"
                 class="sm:w-auto bg-teal-500 text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-teal-600 transition duration-200 shadow-md transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500">
                 Copy Output
@@ -85,7 +106,9 @@
 
         <!-- Output Area -->
         <pre id="outputArea"
-            class="bg-gray-700 text-gray-100 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap text-sm border border-gray-600">Hasil Output Akan Muncul di Sini.</pre>
+            class="bg-gray-700 text-gray-100 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap text-sm border border-gray-600 flex justify-center items-center">
+            Hasil Output Akan Muncul di Sini.
+        </pre>
 
     </div>
 
@@ -98,7 +121,7 @@
     </div>
 
     <script>
-        // --- Core Translation Logic (No Change) ---
+        // --- Core Translation Logic ---
         function translateToBF(str) {
             let prev = 0;
             return Array.from(str).map(c => {
@@ -142,8 +165,8 @@
                     else if (c === '[' && cells[ptr] === 0) i = map[i];
                     else if (c === ']' && cells[ptr] !== 0) i = map[i];
 
-                    // Simple loop limit to prevent freezing on invalid code (optional but good practice)
-                    if (i > 1000000) {
+                    // Simple loop limit to prevent freezing on invalid code 
+                    if (i > 5000000) { 
                         throw new Error("Waktu eksekusi Brainfuck terlalu lama (kemungkinan loop tak terbatas/kode invalid).");
                     }
                 }
@@ -160,15 +183,15 @@
         const customModal = document.getElementById('customModal');
         const modalText = document.getElementById('modalText');
         const modalIcon = document.getElementById('modalIcon');
+        const toBFButton = document.getElementById('toBF');
+        const toTextButton = document.getElementById('toText');
+        const clearAllButton = document.getElementById('clearAll'); // New Element
+
         let dotInterval = null;
+        let originalOutputContent = outputArea.innerHTML;
 
         // --- Custom Pop-up Functions ---
 
-        /**
-         * Menampilkan pop-up dengan pesan dan ikon status.
-         * @param {string} message - Pesan yang ditampilkan.
-         * @param {string} icon - Ikon (e.g., '✅', '❌', '⏳').
-         */
         function showModal(message, icon) {
             modalText.textContent = message;
             modalIcon.textContent = icon;
@@ -183,10 +206,6 @@
             customModal.style.display = 'none';
         }
 
-        /**
-         * Mengaktifkan animasi "Wait..." (titik-titik).
-         * @param {string} baseText - Teks dasar (e.g., "Menyalin").
-         */
         function startWaitAnimation(baseText) {
             let dots = 1;
             modalIcon.textContent = '⏳';
@@ -198,16 +217,64 @@
             }, 300);
         }
 
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                // Tampilkan spinner pada output area
+                outputArea.classList.remove('justify-start', 'items-start');
+                outputArea.classList.add('justify-center', 'items-center');
+                outputArea.innerHTML = '<div class="flex flex-col items-center"><div class="spinner mb-2"></div><span class="text-gray-400">Memproses...</span></div>';
+                
+                // Nonaktifkan tombol
+                toBFButton.disabled = true;
+                toTextButton.disabled = true;
+                clearAllButton.disabled = true;
+                toBFButton.classList.add('opacity-50', 'cursor-not-allowed');
+                toTextButton.classList.add('opacity-50', 'cursor-not-allowed');
+                clearAllButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            } else {
+                // Hapus spinner dan kembalikan output area
+                outputArea.classList.remove('justify-center', 'items-center');
+                outputArea.classList.add('justify-start', 'items-start');
+
+                // Aktifkan kembali tombol
+                toBFButton.disabled = false;
+                toTextButton.disabled = false;
+                clearAllButton.disabled = false;
+                toBFButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                toTextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                clearAllButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
         // --- Event Listeners ---
 
         document.getElementById('toBF').addEventListener('click', () => {
-            const result = translateToBF(inputArea.value);
-            outputArea.textContent = result || "Masukkan teks untuk diterjemahkan.";
+            setLoadingState(true);
+            setTimeout(() => {
+                const result = translateToBF(inputArea.value);
+                outputArea.textContent = result || "Masukkan teks untuk diterjemahkan.";
+                setLoadingState(false);
+            }, 100); 
         });
 
         document.getElementById('toText').addEventListener('click', () => {
-            const result = runBrainfuck(inputArea.value);
-            outputArea.textContent = result || "Masukkan kode Brainfuck untuk diterjemahkan.";
+            setLoadingState(true);
+            setTimeout(() => { 
+                const result = runBrainfuck(inputArea.value);
+                outputArea.textContent = result || "Masukkan kode Brainfuck untuk diterjemahkan.";
+                setLoadingState(false);
+            }, 100);
+        });
+        
+        // New Clear All Listener
+        document.getElementById('clearAll').addEventListener('click', () => {
+            inputArea.value = '';
+            outputArea.textContent = 'Hasil Output Akan Muncul di Sini.';
+            outputArea.classList.remove('justify-center', 'items-center');
+            outputArea.classList.add('justify-start', 'items-start');
+            showModal('Input & Output Dibersihkan.', '✨');
+            setTimeout(hideModal, 1500);
         });
 
         document.getElementById('copyOutput').addEventListener('click', async () => {
@@ -225,7 +292,12 @@
 
             try {
                 // 2. Perform copy operation
-                await navigator.clipboard.writeText(textToCopy);
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textToCopy;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
 
                 // 3. Success: Stop animation, show success message
                 clearInterval(dotInterval);
@@ -244,9 +316,13 @@
             setTimeout(hideModal, 1500);
         });
 
+        // Set initial state for output area
+        setLoadingState(false); 
+        outputArea.innerHTML = originalOutputContent;
+
     </script>
 
 </body>
 </html>
 
-  
+    
